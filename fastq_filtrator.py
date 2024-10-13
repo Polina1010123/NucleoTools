@@ -1,54 +1,55 @@
 import sys
 
-sys.path.append("/home/polina/проверка_дз4/проверка2/modules")
+sys.path.append("")
 
-import dop
+import dop2
 import dopskript
 
 
 def filter_fastq(
-    seqs: dict[str, tuple[str, str]],
-    quality_threshold: float = 0,
+    input_fastq: str = "c:/Users/kozlo/Downloads/example_fastq.fastq",
+    quality_threshold: float = 20,
     gc_bounds: float | tuple[float, float] = (0, 100),
-    length_bounds: float | tuple[float, float] = (0, 2**32),
+    length_bounds: int | tuple[float, float] = (0, 100),
+    output_fastq: str = "c:/Users/kozlo/Downloads/filtered/filtered_sequences.fastq",
 ) -> dict[str, tuple[str, str]]:
     """
-    Действие:
-    фильтрование последовательности ридов ДНК (аргумент seqs)
-    по заданным параметрам.
+    Action:
+    filtering DNA read sequences (input_fastq argument) based on specified parameters.
 
-    Параметры:
-    среднее качества рида (аргумент quality_threshold)
-    GC-состав рида (аргумент gc_bounds)
-    длина рида (аргумент length_bounds)
+    Parameters:
 
-    Возвращает:
-    отфильтрованные последовательности, которые удовлетворяют критериям
-    качества, GC-содержания и длины.
+    path to the input file with unfiltered sequences (input_fastq argument);
+    average quality of the read (quality_threshold argument);
+    GC content of the read (gc_bounds argument);
+    length of the read (length_bounds argument);
+    path to the output file with filtered sequences (output_fastq argument).
+
+    Result:
+    a file containing filtered sequences that meet the quality, GC content, and length criteria.
 
     """
 
-    filtered_seqs_gc_len: dict[str, tuple[str, str]] = dop.filter_fastq(
-        seqs, quality_threshold, gc_bounds, length_bounds
+    filtered_sequences = dop2.filter_fastq(
+        input_fastq, quality_threshold, gc_bounds, length_bounds, output_fastq
     )
-
-    return filtered_seqs_gc_len
+    dop2.save_filtered_sequences(filtered_sequences, output_fastq)
+    return filtered_sequences
 
 
 def run_dna_rna_tools(seq: str, action: str) -> str:
     """
-    Действие:
-    преобразование последовательности ДНК или РНК (аргумент seq).
+    Action:
+    transformation of a DNA or RNA sequence (seq argument).
 
-    Виды преобразования:
-    превращение кодирующей цепи ДНК в мРНК (аргумент transcribe)
-    записывание последовательности в обратном порядке (аргумент reverse)
-    создание комплементарной последовательности (аргумент complement)
-    записывание комплеменентарной последовательности в обратном порядке
-    (аргумент reverse_complement)
+    Types of Transformation:
+    converting a coding DNA strand to mRNA (transcribe argument);
+    writing the sequence in reverse order (reverse argument);
+    creating a complementary sequence (complement argument);
+    writing the complementary sequence in reverse order (reverse_complement argument).
 
-    Возвращает:
-    результат выполнения указанного действия над последовательностью.
+    Returns:
+    The result of the specified action performed on the sequence.
 
     """
 
@@ -57,13 +58,8 @@ def run_dna_rna_tools(seq: str, action: str) -> str:
 
 
 if __name__ == "__main__":
-    seqs = {
-        "@SRX079801": ("AAAAAA", "@@@@@@@@@"),
-        "@SRX079802": ("GCGCGC", "FGGGFGGGFGGGFGDFGCEBB@CCDFDDFFFFBFFGFGEF"),
-        "@SRX079803": ("TTTTTTT", "0000000"),
-    }
 
-    filtered_results = filter_fastq(seqs)
+    filtered_results = filter_fastq()
     print(filtered_results)
 
     result = run_dna_rna_tools("ATGAAAA", "reverse")
