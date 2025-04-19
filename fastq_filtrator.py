@@ -1,66 +1,48 @@
-import sys
-
-sys.path.append("")
-
-import dop2
-import dopskript
+from Bio import SeqIO
+from Bio.SeqUtils import gc_fraction
 
 
 def filter_fastq(
-    input_fastq: str = "c:/Users/kozlo/Downloads/example_fastq.fastq",
-    quality_threshold: float = 20,
-    gc_bounds: float | tuple[float, float] = (0, 100),
-    length_bounds: int | tuple[float, float] = (0, 100),
-    output_fastq: str = "c:/Users/kozlo/Downloads/filtered/filtered_sequences.fastq",
-) -> dict[str, tuple[str, str]]:
-    """
-    Action:
-    filtering DNA read sequences (input_fastq argument) based on specified parameters.
+    input_fastq="example_fastq.fastq",
+    quality_threshold=20,
+    gc_bounds=(0, 100),
+    length_bounds=(0, 100),
+    output_fastq="filtered_sequences.fastq",
+):
 
-    Parameters:
+    if isinstance(gc_bounds, (int, float)):
+        gc_bounds = (0, gc_bounds)
 
-    path to the input file with unfiltered sequences (input_fastq argument);
-    average quality of the read (quality_threshold argument);
-    GC content of the read (gc_bounds argument);
-    length of the read (length_bounds argument);
-    path to the output file with filtered sequences (output_fastq argument).
+    if isinstance(length_bounds, int):
+        length_bounds = (0, length_bounds)
 
-    Result:
-    a file containing filtered sequences that meet the quality, GC content, and length criteria.
+    result = {}
 
-    """
-
-    filtered_sequences = dop2.filter_fastq(
-        input_fastq, quality_threshold, gc_bounds, length_bounds, output_fastq
+    good_reads = (
+        rec
+        for rec in SeqIO.parse(input_fastq, "fastq")
+        if (
+            sum(rec.letter_annotations["phred_quality"])
+            / len(rec.letter_annotations["phred_quality"])
+        )
+        >= quality_threshold
+        and gc_bounds[0] <= gc_fraction(rec.seq) * 100 <= gc_bounds[1]
+        and length_bounds[0] <= len(rec.seq) <= length_bounds[1]
     )
-    dop2.save_filtered_sequences(filtered_sequences, output_fastq)
-    return filtered_sequences
 
+    filtered_records = list(good_reads)
 
-def run_dna_rna_tools(seq: str, action: str) -> str:
-    """
-    Action:
-    transformation of a DNA or RNA sequence (seq argument).
+    SeqIO.write(filtered_records, output_fastq, "fastq")
 
-    Types of Transformation:
-    converting a coding DNA strand to mRNA (transcribe argument);
-    writing the sequence in reverse order (reverse argument);
-    creating a complementary sequence (complement argument);
-    writing the complementary sequence in reverse order (reverse_complement argument).
+    for record in filtered_records:
+        seq = record.seq
+        quality_str = "".join(
+            chr(q + 33) for q in record.letter_annotations["phred_quality"]
+        )
+        result[record.id] = (str(seq), quality_str)
 
-    Returns:
-    The result of the specified action performed on the sequence.
-
-    """
-
-    result: str = dopskript.run_dna_rna_tools(seq, action)
     return result
 
 
-if __name__ == "__main__":
-
-    filtered_results = filter_fastq()
-    print(filtered_results)
-
-    result = run_dna_rna_tools("ATGAAAA", "reverse")
-    print(result)
+filtered_results = filter_fastq()
+print(filtered_results)
